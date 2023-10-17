@@ -174,10 +174,10 @@ ctm_bcp_plot
 ggsave("./figures/ctm4_bcp.jpeg", ctm_bcp_plot, width = 7, height = 2, units = "in", dpi = 600)
 
 # Figure 5: Isotopes ----
-iso_cor_plot <- ggplot(story_fagus_iso_full, aes(d13c, fagus)) +
+iso_cor_plot <- ggplot(story_fagus_iso_full, aes(d13c, (fagus*100))) +
   geom_point() + 
   geom_smooth(method = "lm", se = FALSE) + 
-  ylim(0, 0.3)+
+  ylim(0, 30)+
   xlim(-30, -20)+
   #annotate("text", label = paste("Pearson's Correlation = ", round(cor(story_fagus_iso$d13c, story_fagus_iso$fagus),2)), x = -27, y = 0.19, size = 2, alpha = 0)+
   theme_minimal() +
@@ -190,7 +190,7 @@ iso_paired_plot <- ggplot() +
   geom_area(data = story_fagus, aes(ages, fagus), col ="#3253D9", fill ="#3253D9") +
   geom_point(data = story_iso_all, aes(ages, ((d13c/-100)*2)-0.3), size = 0.5) +
   geom_line(data = story_iso_all, mapping = aes(ages, ((d13c/-100)*2)-0.3)) +
-  scale_y_continuous(name = "Fagus",
+  scale_y_continuous(name = "Fagus", labels = c(0, 10, 20, 30),
                      sec.axis = sec_axis(trans= ~. + 0.3, name="Fagus d13c",  breaks = c(0.6, 0.55, 0.5, 0.45, 0.4), labels = c("-30.0", "-27.5", "-25.0", "-22.5", "-20.0"))) +
   scale_x_reverse()+
   theme_minimal()+
@@ -206,11 +206,12 @@ rq_fagus <- rq(formula = char ~ fagus, data = char_binned, tau = 0.95)
 summary(rq_fagus, se="ker")
 char_fagus_cor <- ggplot(char_binned, aes(fagus, char))+ geom_point() + 
   theme_minimal() + 
+  scale_x_continuous(breaks = c(0, 0.1, 0.2, 0.3), labels = c(0, 10, 20, 30)) +
   geom_smooth(method = "lm", se = FALSE, col = "#3253D9") +
   geom_abline(slope=rq_fagus$coefficients[2],
               intercept=rq_fagus$coefficients[1],
               color="#3253D9", linetype = "dashed")+
-  xlab("American beech abundance <br/> (pollen percent)") +
+  xlab("American beech abundance (%)") +
   ylab("Charcoal Accumultation Rate <br/> (pieces cm<sup>-2</sup> year<sup>-1</sup>)") +
   theme(axis.title.x = element_markdown(),
         axis.title.y = element_markdown(), panel.grid = element_blank(),
@@ -224,11 +225,12 @@ rq_quercus <- rq(formula = char ~ quercus, data = char_binned, tau = 0.95)
 summary(rq_quercus, se="ker")
 char_quercus_cor <- ggplot(char_binned, aes(quercus, char))+ geom_point() + 
   theme_minimal() + 
+  scale_x_continuous(breaks = c(0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6), labels = c(0, 10, 20, 30, 40, 50, 60)) +
   geom_smooth(method = "lm", se = FALSE, col = "#C75702") +
   geom_abline(slope=rq_quercus$coefficients[2],
               intercept=rq_quercus$coefficients[1],
               color="#C75702", linetype = "dashed")+
-  xlab("Oak abundance <br/> (pollen percent)") +
+  xlab("Oak abundance (%)") +
   ylab("Charcoal Accumultation Rate <br/> (pieces cm<sup>-2</sup> year<sup>-1</sup>)") +
   theme(axis.title.x = element_markdown(),
         axis.title.y = element_markdown(), panel.grid = element_blank(),
@@ -336,9 +338,10 @@ comp_pollen <-
   geom_point(aes(x = point, y = fagus), col = "darkred") +
   facet_wrap(~lake, nrow = 1) +
   xlab("Age (Years BP)") +
-  ylab("American beech abundance")+
+  ylab("American beech abundance (%)")+
   coord_flip() +
   scale_x_reverse() +
+  scale_y_continuous(breaks = c(0, 0.1, 0.2, 0.3), labels = c(0, 10, 20, 30)) +
   theme_minimal()+
   xlim(max(story_fagus$ages),min(story_fagus$ages))+
   theme(axis.title = element_text(size = 11),
@@ -349,9 +352,11 @@ ggsave("./figures/comp_pollen.jpeg", comp_pollen, width = 8, height = 8, units =
 
 ss_binned_cor <- ggplot(fagus_combo, aes(story, spicer))+ geom_point(shape = 2) + 
   theme_minimal() + 
+  scale_x_continuous(breaks = c(0, 0.1, 0.2), labels = c(0, 10, 20)) +
+  scale_y_continuous(breaks = c(0, 0.1, 0.2), labels = c(0, 10, 20)) +
   geom_smooth(method = "lm", se = FALSE, col = "black") +
-  xlab("Story Lake<br>beech abundance") +
-  ylab("Spicer Lake<br>beech abundance") +
+  xlab("Story Lake<br>beech abundance (%)") +
+  ylab("Spicer Lake<br>beech abundance (%)") +
   theme(axis.title.x = element_markdown(),
         axis.title.y = element_markdown(),
         title = element_markdown())
@@ -369,8 +374,10 @@ spa_binned_cor <- fagus_combo %>%
   scale_shape_manual(values = c(1,4))+
   scale_linetype_manual(values = c(2,3))+
   ylim(c(0,0.3)) +
-  xlab("Story Lake<br>beech abundance") +
-  ylab("Appleman and Pretty Lake <br> beech abundance") +
+  xlab("Story Lake<br>beech abundance (%)") +
+  ylab("Appleman and Pretty Lake <br> beech abundance (%)") +
+  scale_x_continuous(breaks = c(0, 0.1, 0.2), labels = c(0, 10, 20)) +
+  scale_y_continuous(breaks = c(0, 0.1, 0.2, 0.3), labels = c(0, 10, 20, 30)) +
   theme(legend.position = c(.2, .8), 
         legend.title = element_blank(),
         legend.background = element_rect(fill = "white"),
