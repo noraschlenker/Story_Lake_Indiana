@@ -132,6 +132,15 @@ pollen_accurate_func <- function(pollen, control_conc, control, accu_rate) {
 story_pollen_grouped_counts_wide_only <- story_pollen_grouped_counts_wide[,c(-1, -length(story_pollen_grouped_counts_wide))]
 story_pollen_acc <- ((story_pollen_grouped_counts_wide_only*story_control$Control_conc)/story_control$Control)*story_control$acc_rate
 
+pollen_sample_ageres <- story_pollen_grouped_prop_wide$ages[1:(length(story_pollen_grouped_prop_wide$ages)-1)]-story_pollen_grouped_prop_wide$ages[2:length(story_pollen_grouped_prop_wide$ages)]
+mean(pollen_sample_ageres)
+sd(pollen_sample_ageres)
+
+A <- story_pollen_grouped_counts_wide[,c(2:4,8:13,17:19,21:28,32,33,35,36,38:41)]
+NonA <- story_pollen_grouped_counts_wide[,c(5:7,14:16,20,29:31,34,37,43,44)]
+
+A_NAP <- data.frame(ages = story_pollen_grouped_counts_wide$ages, "AP/NAP" = rowSums(A)/rowSums(NonA))
+
 # Topic Analysis - CTM ----------
 #create defaults for multiple numbers of topics 
 nlist <- 2:8 #set number of topics
