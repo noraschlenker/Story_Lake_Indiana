@@ -186,12 +186,18 @@ iso_cor_plot <- ggplot(story_fagus_iso_full, aes(d13c, (fagus*100))) +
 iso_cor_plot
 ggsave("./figures/iso_fagus_cor_plot.jpeg", iso_cor_plot, width = 3, height = 3, units = "in", dpi = 600)
 
+
 iso_paired_plot <- ggplot() +
   geom_area(data = story_fagus, aes(ages, fagus), col ="#3253D9", fill ="#3253D9") +
-  geom_point(data = story_iso_all, aes(ages, ((d13c/-100)*2)-0.3), size = 0.5) +
-  geom_line(data = story_iso_all, mapping = aes(ages, ((d13c/-100)*2)-0.3)) +
-  scale_y_continuous(name = "Fagus", labels = c(0, 10, 20, 30),
-                     sec.axis = sec_axis(trans= ~. + 0.3, name="Fagus d13c",  breaks = c(0.6, 0.55, 0.5, 0.45, 0.4), labels = c("-30.0", "-27.5", "-25.0", "-22.5", "-20.0"))) +
+  geom_point(data = iso_range, mapping = aes(ages, (((iso_range$d13c/-70)*2)-0.3)), shape = 1, col = "grey") +
+  geom_segment(data = iso_range_minmax, mapping = aes(x=ages, xend=ages, y=(((iso_range_minmax$min/-70)*2)-0.3), yend=(((iso_range_minmax$max/-70)*2)-0.3)), 
+               colour="grey70") +
+  geom_point(data = story_iso_all, aes(ages, ((d13c/-70)*2)-0.3), size = 0.5) +
+  geom_line(data = story_iso_all, mapping = aes(ages, ((d13c/-70)*2)-0.3)) +
+  scale_y_continuous(name = "Fagus", breaks = c(0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6),labels = c(0, 10, 20, 30, 40, 50, 60)
+                     , sec.axis = sec_axis(trans= ~. + 0.3, name="Fagus d13c",  
+                                           breaks = c(((-30.0/-70)*2), ((-27.5/-70)*2), ((-25.0/-70)*2), ((-22.5/-70)*2), ((-20.0/-70)*2)), 
+                                           labels = c("-30.0", "-27.5", "-25.0", "-22.5", "-20.0"))) +
   scale_x_reverse()+
   theme_minimal()+
   theme(axis.text.y=element_text(size=10), axis.title = element_blank(), panel.grid = element_blank(),
@@ -268,6 +274,9 @@ char_plot
 
 iso_plot <- ggplot(story_iso_all, aes(ages, d13c))+
   geom_vline(xintercept = bcp_points, linetype = "longdash")+
+  geom_segment(data = iso_range_minmax, mapping = aes(x=ages, xend=ages, y=iso_range_minmax$min, yend=iso_range_minmax$max), 
+               colour="grey70") +
+  geom_point(data = iso_range, mapping = aes(ages, iso_range$d13c), shape = 1, col = "grey") +
   geom_point() +
   geom_line()+
   #geom_smooth(method = "loess", se = FALSE, linetype = "dotted", color = "darkgrey", span = .5)+
@@ -324,16 +333,16 @@ sp$lake <- "spicer"
 ap$lake <- "apple"
 py$lake <- "pretty"
 fagus_plot <- data.frame(rbind(st, sp, ap, py))
-fagus_plot$lake <- factor(fagus_plot$lake, levels = c("story", "apple", "pretty", "spicer"), labels = c("Story Lake", "Appleman Lake", "Pretty Lake", "Spicer Lake"))
-spicer_bcp_points <- 
+fagus_plot$lake <- factor(fagus_plot$lake, levels = c("apple", "pretty","story",  "spicer"), labels = c( "Appleman Lake", "Pretty Lake", "Story Lake", "Spicer Lake"))
 rm(st, sp, ap, py)
 
 comp_pollen <- 
   fagus_plot %>%
-  mutate(lower = ifelse(round(ages) %in% c(2784, 4615, 7061, 6782, 3216, 1778), lower, NA)) %>%
-  mutate(upper = ifelse(round(ages) %in% c(2784, 4615, 7061, 6782, 3216, 1778), upper, NA)) %>%
-  mutate(point = ifelse(round(ages) %in% c(2784, 4615, 7061, 6782, 3216, 1778), ages, NA)) %>%
-  ggplot(aes(x = ages, y = fagus)) + geom_line(col = "black") + geom_area(fill = "grey") +
+  mutate(lower = ifelse(round(ages) %in% c(2784, 4615, 7061, 6782, 4210, 3216, 1778), lower, NA)) %>%
+  mutate(upper = ifelse(round(ages) %in% c(2784, 4615, 7061, 6782, 4210, 3216, 1778), upper, NA)) %>%
+  mutate(point = ifelse(round(ages) %in% c(2784, 4615, 7061, 6782, 4210, 3216, 1778), ages, NA)) %>%
+  ggplot(aes(x = ages, y = fagus)) + geom_line(col = "black") + geom_area(aes(fill = lake)) +
+  scale_fill_discrete(type = c("lightgrey", "lightgrey", "darkgrey", "lightgrey")) +
   geom_errorbar(aes(xmin = lower, xmax = upper, y = fagus), col = "darkred") +
   geom_point(aes(x = point, y = fagus), col = "darkred") +
   facet_wrap(~lake, nrow = 1) +
@@ -346,7 +355,8 @@ comp_pollen <-
   xlim(max(story_fagus$ages),min(story_fagus$ages))+
   theme(axis.title = element_text(size = 11),
         axis.title.x = element_markdown(),
-        strip.text = element_text(size = 12))
+        strip.text = element_text(size = 12),
+        legend.position = "none")
 comp_pollen
 ggsave("./figures/comp_pollen.jpeg", comp_pollen, width = 8, height = 8, units = "in", dpi = 600)
 

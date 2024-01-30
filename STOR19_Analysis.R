@@ -14,11 +14,11 @@ library(bcp)
 
 # Load data ----------
 # read in all files from the excel sheet STOR19_final and put them all in a list 
-sheet_names <- excel_sheets("./data_raw/STOR19_final.xlsx")
+sheet_names <- excel_sheets("./STOR19_raw.xlsx")
 STOR19_data <- list()
 for (i in 1:length(sheet_names)) {
   st <- sheet_names[i]
-  temp <- read_xlsx("./data_raw/STOR19_final.xlsx", sheet = st, col_names = TRUE)
+  temp <- read_xlsx("./STOR19_raw.xlsx", sheet = st, col_names = TRUE)
   STOR19_data[[i]] <- temp
 }
 
@@ -56,11 +56,28 @@ story_ages_midpoint <- apply(story_ages_predict, 2, mean)
 story_ages_midpoint <- data.frame(depth =  seq(from = 0.5, to = 1200.5, by = 1), ages = story_ages_midpoint)
 
 # Calculate the 95th confidence of age estimates
-story_ages_95conf <- apply(story_ages_predict, 2, function(x){
+story_ages_95quant <- apply(story_ages_predict, 2, function(x){
   quantile(x, probs = c(0.025, 0.975))
   })
-story_ages_95conf <- t(story_ages_95conf)
-story_ages_combo <- data.frame(story_ages_midpoint, "lower" = story_ages_95conf[,1], "upper" = story_ages_95conf[,2])
+
+story_ages_95conf_low <- apply(story_ages_predict, 2, function(x){
+  mean(x)-(2*sd(x))
+})
+story_ages_95conf_high <- apply(story_ages_predict, 2, function(x){
+  mean(x)+(2*sd(x))
+})
+
+story_ages_95conf_sd <- data.frame(story_ages_midpoint, "lower" = story_ages_95conf_low, "upper" = story_ages_95conf_high)
+
+
+# story_ages_95conf <- t(story_ages_95quant)
+
+#story_ages_combo <- data.frame(story_ages_midpoint, "lower" = story_ages_95conf_low, "upper" = story_ages_95conf_high)
+
+
+
+
+
 
 # Calculate sedimentation rate 
 story_sedrate <- summary(story_chronology, type = 'sed_rate', useExisting = FALSE,
@@ -307,18 +324,31 @@ cor(char_binned$quercus, char_binned$char)
 summary(lm(char_binned$quercus ~ char_binned$char))
 
 # Isotopic Analysis -------
-story_iso_all <- STOR19_data[["ISO"]]
-story_iso <- story_iso_all[which(story_iso_all$code != 3),1:2]
-story_fagus_iso <- inner_join(story_iso, story_fagus[,1:3], by = c("depth" = "depth"))
-colnames(story_fagus_iso) <- c("depth", "d13c", "age", "fagus")
+story_iso_raw <- STOR19_data[["ISO_raw"]]
+iso_range <- inner_join(story_iso_raw, story_ages_midpoint, by = c("depth" = "depth"))
 
-cor(story_fagus_iso$fagus, story_fagus_iso$d13c)
-summary(lm(story_fagus_iso$d13c ~ story_fagus_iso$fagus))
+iso_range_minmax <- iso_range %>% 
+  group_by(ages) %>%
+  summarise(min = min(d13c), max = max(d13c), mean = mean(d13c), count = n()) %>%
+  mutate(range = max-min)
+
+iso_range_plot <-  iso_range_minmax %>% 
+  ggplot(aes(x = ages)) + 
+  geom_point(aes(y = mean)) +
+  geom_ribbon(aes(ymin=min, ymax=max), alpha=0.2)+ 
+  theme_minimal()
+iso_range_plot
+ggsave("./output/iso/iso_range_plot.jpeg")
+
+
+story_iso_all <-iso_range %>% 
+  group_by(depth, ages) %>%
+  summarise(d13c = mean(d13c))
 
 # Add average fagus to iso points without direct beech comparison
-story_iso_all <- inner_join(story_iso_all, story_ages_midpoint, by = c("depth" = "depth"))
 story_fagus_iso_full <- left_join(story_iso_all, story_fagus[,c(1,3)], by = c("depth" = "depth"))
 f216 <- mean(c(story_fagus$fagus[which(story_fagus$depth == 212.5 | story_fagus$depth == 220.5)]))
+f320 <- mean(c(story_fagus$fagus[which(story_fagus$depth == 316.5 | story_fagus$depth == 324.5)]))
 f336 <- mean(c(story_fagus$fagus[which(story_fagus$depth == 332.5 | story_fagus$depth == 340.5)]))
 f344 <- mean(c(story_fagus$fagus[which(story_fagus$depth == 340.5 | story_fagus$depth == 356.5)]))
 f440 <- mean(c(story_fagus$fagus[which(story_fagus$depth == 436.5 | story_fagus$depth == 444.5)]))
@@ -326,6 +356,7 @@ f448 <- mean(c(story_fagus$fagus[which(story_fagus$depth == 444.5 | story_fagus$
 f476 <- mean(c(story_fagus$fagus[which(story_fagus$depth == 473.5 | story_fagus$depth == 480.5)]))
 
 story_fagus_iso_full$fagus[which(story_fagus_iso_full$depth == 216.5)] <- f216
+story_fagus_iso_full$fagus[which(story_fagus_iso_full$depth == 320.5)] <- f320
 story_fagus_iso_full$fagus[which(story_fagus_iso_full$depth == 336.5)] <- f336
 story_fagus_iso_full$fagus[which(story_fagus_iso_full$depth == 344.5)] <- f344
 story_fagus_iso_full$fagus[which(story_fagus_iso_full$depth == 440.5)] <- f440
@@ -603,14 +634,20 @@ cor(fagus_combo$story[which(fagus_combo$pretty > 0)],fagus_combo$pretty[which(fa
 
 ## Age model comparison -----------
 spicer_pollen_age_conf <- left_join(spicer_fagus[,1:2], spicer_ages_combo, by = c("ages" = "new_age"))
-ss_age_comp <- data.frame(story_ages_predict[,which(round(story_ages_combo$ages) %in% c(2784, 4615, 7061))], spicer_ages_predict[,which(round(spicer_ages_combo$ages) %in% c(1778, 3216, 6782))])
-colnames(ss_age_comp) <- c("story_28", "story_46", "story_70", "spicer_18", "spicer_32", "spicer_68")
+ss_age_comp <- data.frame(story_ages_predict[,which(round(story_ages_95conf_sd$ages) %in% c(2784, 3759, 4615, 7061))], spicer_ages_predict[,which(round(spicer_ages_95conf_sd$ages) %in% c(1778, 3216, 4210, 6782))])
+colnames(ss_age_comp) <- c("story_28", "story_37", "story_46", "story_70", "spicer_18", "spicer_32", "spicer_42", "spicer_68")
 
 t.test(ss_age_comp$story_28, ss_age_comp$spicer_18)
 ggplot(ss_age_comp) + geom_histogram(aes(x = story_28), fill = "blue", alpha = 0.5) + geom_histogram(aes(x = spicer_18), fill = "red", alpha = 0.5)+ theme_minimal()
 ggsave("./figures/regional_lakes/ss_recovery.jpeg")
-t.test(ss_age_comp$story_46, ss_age_comp$spicer_32)
-ggplot(ss_age_comp) + geom_histogram(aes(x = story_46), fill = "blue", alpha = 0.5) + geom_histogram(aes(x = spicer_32), fill = "red", alpha = 0.5)+ theme_minimal()
+t.test(ss_age_comp$story_37, ss_age_comp$spicer_32)
+ggplot(ss_age_comp) + geom_histogram(aes(x = story_37), fill = "blue", alpha = 0.5) + geom_histogram(aes(x = spicer_32), fill = "red", alpha = 0.5)+ theme_minimal()
+ggsave("./figures/regional_lakes/ss_onset.jpeg")
+t.test(ss_age_comp$story_37, ss_age_comp$spicer_32)
+ggplot(ss_age_comp) + geom_histogram(aes(x = story_37), fill = "blue", alpha = 0.5) + geom_histogram(aes(x = spicer_42), fill = "red", alpha = 0.5)+ theme_minimal()
+ggsave("./figures/regional_lakes/ss_onset2.jpeg")
+t.test(ss_age_comp$story_46, ss_age_comp$spicer_42)
+ggplot(ss_age_comp) + geom_histogram(aes(x = story_46), fill = "blue", alpha = 0.5) + geom_histogram(aes(x = spicer_32), fill = "green", alpha = 0.5) +geom_histogram(aes(x = spicer_42), fill = "red", alpha = 0.5)+ theme_minimal()
 ggsave("./figures/regional_lakes/ss_onset.jpeg")
 t.test(ss_age_comp$story_70, ss_age_comp$spicer_68)
 ggplot(ss_age_comp) + geom_histogram(aes(x = story_70), fill = "blue", alpha = 0.5) + geom_histogram(aes(x = spicer_68), fill = "red", alpha = 0.5)+ theme_minimal()
