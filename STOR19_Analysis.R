@@ -286,6 +286,11 @@ write.csv(ctm_topics3_postprob, file = "./output/final/bcp3_posterior.csv")
 # Charcoal Analysis ---------
 char_raw <- STOR19_data[["CHAR"]]
 
+char_counts <- data.frame(depth = char_raw$CmTop+0.5, charcoal = char_raw$Total_Count, volume = 1)
+char_counts <- left_join(char_counts, story_ages_midpoint, by = c("depth" = "depth")) 
+char_counts <- char_counts[complete.cases(char_counts),]
+write.csv(char_counts, "./output/char/charcoal_counts.csv")
+
 char_depths <- seq(from = 1.5, to = max(char_raw$CmTop)+0.5, by = 1)
 #convert sedimentation rate into sediment accumulation rate
 story_accrate <- data.frame(age = story_sedrate$position_grid, acc_rate = 1/story_sedrate$`50%`)
@@ -344,6 +349,7 @@ ggsave("./output/iso/iso_range_plot.jpeg")
 story_iso_all <-iso_range %>% 
   group_by(depth, ages) %>%
   summarise(d13c = mean(d13c))
+write.csv(story_iso_all, "./output/iso/story_iso_means.csv")
 
 # Add average fagus to iso points without direct beech comparison
 story_fagus_iso_full <- left_join(story_iso_all, story_fagus[,c(1,3)], by = c("depth" = "depth"))
@@ -550,6 +556,7 @@ ecol_groups <- read.csv("./data_raw/ecolgroup_taxa.csv")
 apple_pollen_raw <- read.csv("./data_raw/APPL05_Pollen.csv")
 colnames(apple_pollen_raw) <- gsub("[.]", " ", colnames(apple_pollen_raw))
 apple_pollen_raw[is.na(apple_pollen_raw)] <- 0
+apple_pollen_raw_ages <- left_join(apple_pollen_raw, apple_ages_midpoint, by = c("Depth" = "depth"))
 
 #convert to long format, remove taxa that have no counts, remove aquatic taxa
 apple_pollen_long <- tibble(apple_pollen_raw[, which(colSums(apple_pollen_raw) > 0)]) %>%  

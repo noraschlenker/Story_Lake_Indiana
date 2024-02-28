@@ -21,7 +21,12 @@ library(quantreg)
 # Not made in R
 
 # Figure 2: Age-depth model --------
-jpeg("./figures/story_chronology.jpeg", height = 5, width = 7, units = "in", res = 300)
+jpeg("./figures/story_chronology.jpeg", height = 5, width = 7, units = "in", res = 1000)
+chron_plot <- plot(story_chronology)
+chron_plot + scale_x_reverse(breaks = seq(0, 14000, 1000), limits = c(13500, -500)) + ylab("Depth (cm below surface)") + xlab("Age (calendar years BP)") + coord_flip()
+dev.off()
+
+pdf("./figures/story_chronology.pdf", height = 5, width = 7)
 chron_plot <- plot(story_chronology)
 chron_plot + scale_x_reverse(breaks = seq(0, 14000, 1000), limits = c(13500, -500)) + ylab("Depth (cm below surface)") + xlab("Age (calendar years BP)") + coord_flip()
 dev.off()
@@ -62,7 +67,28 @@ cols <- c("#3253D9", #fagus = blue
 chron <- data.frame(story_pollen_grouped_prop_wide$ages)
 colnames(chron) <- c("Age (calendar years BP)")
 
-jpeg("./figures/full_poll.jpeg", width = 12, height = 6, units = "in", res = 600)
+jpeg("./figures/full_poll.jpeg", width = 12, height = 6, units = "in", res = 1000)
+poll_rp <- riojaPlot(x_poll, chron, selVars = poll_incl, groups = poll_types
+                     , yvar.name = "Age (calendar years BP)"
+                     , ymin = 0, ymax = 8000, yinterval = 1000
+                     #, plot.groups = TRUE
+                     , scale.percent = TRUE
+                     #, plot.cumul = TRUE #plot cumulative plot for all types
+                     , srt.xlabel = 45
+                     #, labels.italicize = TRUE #this is not working....
+                     #, do.clust = TRUE
+                     #, plot.clust = TRUE
+                     #, plot.zones = "auto"
+                     , col.poly=cols
+                     , plot.exag=TRUE
+                     #, xlabels = y.names
+                     #, xRight = 0.8
+                     , xlabels = taxa_labels
+)
+dev.off()
+
+
+pdf("./figures/full_poll.pdf", width = 8, height = 4)
 poll_rp <- riojaPlot(x_poll, chron, selVars = poll_incl, groups = poll_types
                      , yvar.name = "Age (calendar years BP)"
                      , ymin = 0, ymax = 8000, yinterval = 1000
@@ -135,7 +161,7 @@ ctm_terms3_plot <-  ctm_terms3_top %>%
         axis.title = element_text(size = 8),
         strip.text = element_text(size = 6))
 ctm_terms3_plot
-ggsave("./figures/ctm_terms3.jpeg", ctm_terms3_plot, width = 2, height = 5, units = "in", dpi = 600)
+ggsave("./figures/ctm_terms3.jpeg", ctm_terms3_plot, width = 2, height = 5, units = "in", dpi = 1000)
 
 ## Topics plot ------
 ctm_topics3_plot <- ctm_topics3 %>%
@@ -143,15 +169,16 @@ ctm_topics3_plot <- ctm_topics3 %>%
   ggplot(aes(x = age, y = gamma, col = topic)) + geom_line(linewidth = 1, show.legend = FALSE) +
   scale_x_reverse()+
   scale_color_discrete(type = c("3" = "#FFBF00","2" = "#3253D9", "1" = "#C75702")) +
-  xlab("Age (ka BP)") +
+  #xlab("Age (ka BP)") +
   ylab("Community Prevalence (gamma)") +
   theme_minimal()+
   theme(axis.text.y = element_markdown(size = 6),
-        axis.text.x = element_text(size = 6),
-        axis.title = element_text(size = 10),
+        axis.text.x = element_blank(),
+        axis.title.y = element_text(size = 10),
+        axis.title.x = element_blank(),
         strip.text = element_text(size = 6))
 ctm_topics3_plot
-ggsave("./figures/ctm_topics3.jpeg", ctm_topics3_plot, width = 7, height = 3, units = "in", dpi = 600)
+ggsave("./figures/ctm_topics3.jpeg", ctm_topics3_plot, width = 6, height = 3, units = "in", dpi = 1000)
 
 ## BCP plot ----------
 ctm_bcp1 <- data.frame(bcp_prob = ctm_topics3_bcp[[1]]$posterior.prob, topic = rep(1, times = length(ctm_topics3_bcp[[1]]$posterior.prob)), age = ctm_topics3$age)
@@ -165,13 +192,15 @@ ctm_bcp_plot <- ggplot(ctm_bcp, aes(age, bcp_prob, col = topic)) + geom_line(lin
   scale_color_discrete(type = c( "3" = "#FFBF00","2" = "#3253D9", "1" = "#C75702")) +
   theme_minimal()+
   ylab("BCP Posterior Probability") +
-  xlab("Age (ka BP)") +
+  xlab("Age (calendar years BP)") +
   geom_hline(yintercept = 0.5) +
   theme(axis.text.y = element_markdown(size = 6),
         axis.text.x = element_text(size = 6),
-        axis.title = element_text(size = 8), legend.position = "none")
+        axis.title = element_text(size = 8), 
+        axis.title.x = element_text(vjust = .1),
+        legend.position = "none")
 ctm_bcp_plot
-ggsave("./figures/ctm4_bcp.jpeg", ctm_bcp_plot, width = 7, height = 2, units = "in", dpi = 600)
+ggsave("./figures/ctm4_bcp.jpeg", ctm_bcp_plot, width = 6, height = 2, units = "in", dpi = 1000)
 
 # Figure 5: Isotopes ----
 iso_cor_plot <- ggplot(story_fagus_iso_full, aes(d13c, (fagus*100))) +
@@ -184,7 +213,7 @@ iso_cor_plot <- ggplot(story_fagus_iso_full, aes(d13c, (fagus*100))) +
   theme(axis.text.y=element_text(size=10), axis.title = element_blank(), panel.grid = element_blank(),
         axis.line = element_line(colour = "gray"), axis.ticks = element_line(colour = "gray"))
 iso_cor_plot
-ggsave("./figures/iso_fagus_cor_plot.jpeg", iso_cor_plot, width = 3, height = 3, units = "in", dpi = 600)
+ggsave("./figures/iso_fagus_cor_plot.jpeg", iso_cor_plot, width = 3, height = 3, units = "in", dpi = 1000)
 
 
 iso_paired_plot <- ggplot() +
@@ -203,7 +232,7 @@ iso_paired_plot <- ggplot() +
   theme(axis.text.y=element_text(size=10), axis.title = element_blank(), panel.grid = element_blank(),
         axis.line = element_line(colour = "gray"), axis.ticks = element_line(colour = "gray"))
 iso_paired_plot
-ggsave("./figures/iso_fagus_plot.jpeg", iso_paired_plot, width = 7, height = 3, units = "in", dpi = 600)
+ggsave("./figures/iso_fagus_plot.jpeg", iso_paired_plot, width = 7, height = 3, units = "in", dpi = 1000)
 
 summary(lm(story_fagus_iso$fagus~story_fagus_iso$d13c))
 
@@ -223,7 +252,7 @@ char_fagus_cor <- ggplot(char_binned, aes(fagus, char))+ geom_point() +
         axis.title.y = element_markdown(), panel.grid = element_blank(),
         axis.line = element_line(colour = "gray"), axis.ticks = element_line(colour = "gray"))
 char_fagus_cor
-ggsave("./figures/char_fagus_cor.jpeg", char_fagus_cor, width = 3.5, height = 3.5, units = "in", dpi = 600)
+ggsave("./figures/char_fagus_cor.jpeg", char_fagus_cor, width = 3.5, height = 3.5, units = "in", dpi = 1000)
 
 summary(lm(char_binned$char ~ char_binned$fagus))
 
@@ -242,7 +271,12 @@ char_quercus_cor <- ggplot(char_binned, aes(quercus, char))+ geom_point() +
         axis.title.y = element_markdown(), panel.grid = element_blank(),
         axis.line = element_line(colour = "gray"), axis.ticks = element_line(colour = "gray"))
 char_quercus_cor
-ggsave("./figures/char_quercus_cor.jpeg", char_quercus_cor, width = 3.5, height = 3.5, units = "in", dpi = 600)
+ggsave("./figures/char_quercus_cor.jpeg", char_quercus_cor, width = 3.5, height = 3.5, units = "in", dpi = 1000)
+
+char_cor <- grid.arrange(grobs = list(char_fagus_cor, char_quercus_cor), ncol = 2, as.table = FALSE)
+
+ggsave("./figures/char_cor.pdf", char_cor, width = 8, height = 3.5, units = "in", dpi = 1000)
+
 
 summary(lm(char_binned$char ~ char_binned$quercus))
 
@@ -311,7 +345,7 @@ g4 <- rbind(p1,p2,p3,p4, size = "first")
 g4$widths <- unit.pmax(p1$widths, p2$widths, p3$widths, p4$widths)
 grid.newpage()
 
-jpeg("./figures/combo_plot_reorg.jpeg", width = 8, height = 6, units = "in", res = 600)
+jpeg("./figures/combo_plot_reorg.jpeg", width = 8, height = 6, units = "in", res = 1000)
 grid.draw(g4)
 dev.off()
 
@@ -346,7 +380,7 @@ comp_pollen <-
   geom_errorbar(aes(xmin = lower, xmax = upper, y = fagus), col = "darkred") +
   geom_point(aes(x = point, y = fagus), col = "darkred") +
   facet_wrap(~lake, nrow = 1) +
-  xlab("Age (Years BP)") +
+  xlab("Age (calendar years BP)") +
   ylab("American beech abundance (%)")+
   coord_flip() +
   scale_x_reverse() +
@@ -354,7 +388,7 @@ comp_pollen <-
   theme_minimal()+
   xlim(max(story_fagus$ages),min(story_fagus$ages))+
   theme(axis.title = element_text(size = 11),
-        axis.title.x = element_markdown(),
+        axis.title.x = element_markdown(vjust = 0.1),
         strip.text = element_text(size = 12),
         legend.position = "none")
 comp_pollen
@@ -371,7 +405,7 @@ ss_binned_cor <- ggplot(fagus_combo, aes(story, spicer))+ geom_point(shape = 2) 
         axis.title.y = element_markdown(),
         title = element_markdown())
 ss_binned_cor
-ggsave("./figures/ss_correlation.jpeg", width = 4, height = 4, units = "in", dpi = 600)
+ggsave("./figures/ss_correlation.jpeg", ss_binned_cor, width = 4, height = 4, units = "in", dpi = 600)
 
 spa_binned_cor <- fagus_combo %>%
   select(-spicer) %>%
@@ -388,14 +422,15 @@ spa_binned_cor <- fagus_combo %>%
   ylab("Appleman and Pretty Lake <br> beech abundance (%)") +
   scale_x_continuous(breaks = c(0, 0.1, 0.2), labels = c(0, 10, 20)) +
   scale_y_continuous(breaks = c(0, 0.1, 0.2, 0.3), labels = c(0, 10, 20, 30)) +
-  theme(legend.position = c(.2, .8), 
+  theme(legend.position = c(.25, .8), 
         legend.title = element_blank(),
         legend.background = element_rect(fill = "white"),
+        legend.margin = margin(t = 1, r = 5, b = 5, l = 5, unit = "pt"),
         axis.title.x = element_markdown(),
         axis.title.y = element_markdown(),
         title = element_markdown())
 spa_binned_cor
-ggsave("./figures/spa_correlation.jpeg", width = 4, height = 4, units = "in", dpi = 600)
+ggsave("./figures/spa_correlation.jpeg", spa_binned_cor, width = 4, height = 4, units = "in", dpi = 600)
 
 
 
